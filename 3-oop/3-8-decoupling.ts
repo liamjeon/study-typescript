@@ -9,7 +9,6 @@
 //다른 milk, sugar 메이커를 만들면 다 수정해줘야함...
 //클래스간은 서로 잘 알고 있는게 좋지 않아...
 
-
 //Decoupling(디커플링)의 원칙
 //클래스들간 서로 상호작용하는 경우 클래스 자신을 노출하는 것이 아니라
 //계약서를 통해, 계약서에 의거하여 의사소통을 해야한다.
@@ -24,6 +23,13 @@
 
   interface CoffeeMaker {
     makeCoffee(shots: number): CoffeeCup;
+  }
+
+  interface MilkFrother{
+    makeMilk(cup: CoffeeCup): CoffeeCup;
+  }
+  interface SugarProvider{
+    addSugar(cup: CoffeeCup): CoffeeCup;
   }
 
   class CoffeeMachine implements CoffeeMaker {
@@ -76,7 +82,8 @@
     }
   }
 
-  class CheapMilkSteamer {
+  //싸구려 우유 거품기
+  class CheapMilkSteamer implements MilkFrother {
     private steamMilk(): void {
       console.log("Steaming some milk...");
     }
@@ -88,8 +95,33 @@
       };
     }
   }
+  class FancyMilkSteamer implements MilkFrother {
+    private steamMilk(): void {
+      console.log("Fancy Steaming some milk...");
+    }
+    makeMilk(cup: CoffeeCup): CoffeeCup {
+      this.steamMilk();
+      return {
+        ...cup,
+        hasMilk: true,
+      };
+    }
+  }
+  class ColdMilkSteamer implements MilkFrother {
+    private steamMilk(): void {
+      console.log("Cold Steaming some milk...");
+    }
+    makeMilk(cup: CoffeeCup): CoffeeCup {
+      this.steamMilk();
+      return {
+        ...cup,
+        hasMilk: true,
+      };
+    }
+  }
 
-  class CandySugarMixer {
+  //설탕 제조기
+  class CandySugarMixer implements SugarProvider {
     private getSugar() {
       console.log("Getting some sugar from candy...");
       return true;
@@ -102,12 +134,27 @@
       };
     }
   }
+  class SugarMixer implements SugarProvider {
+    private getSugar() {
+      console.log("Getting some sugar from jar!!!");
+      return true;
+    }
+    addSugar(cup: CoffeeCup): CoffeeCup {
+      const sugar = this.getSugar();
+      return {
+        ...cup,
+        hasSugar: sugar,
+      };
+    }
+  }
+
+
 
   class CaffeLatteMachine extends CoffeeMachine {
     constructor(
       shots: number,
       public readonly serialNumber: string,
-      private milkFrother: CheapMilkSteamer
+      private milkFrother: MilkFrother
     ) {
       super(shots);
     }
@@ -119,7 +166,7 @@
   }
 
   class SweetCoffeeMaker extends CoffeeMachine {
-    constructor(private beans: number, private sugar: CandySugarMixer) {
+    constructor(private beans: number, private sugar: SugarProvider) {
       super(beans);
     }
     makeCoffee(shots: number): CoffeeCup {
@@ -131,14 +178,34 @@
   class SweetCaffeLatteMahcine extends CoffeeMachine {
     constructor(
       private beans: number,
-      private sugar: CandySugarMixer,
-      private milk: CheapMilkSteamer
+      private sugar: SugarProvider,
+      private milk: MilkFrother
     ) {
-        super(beans);
+      super(beans);
     }
-    makeCoffee(shots:number):CoffeeCup{
-        const coffee = this.makeCoffee(shots);
-        return this.milk.makeMilk(this.sugar.addSugar(coffee));
+    makeCoffee(shots: number): CoffeeCup {
+      const coffee = this.makeCoffee(shots);
+      return this.milk.makeMilk(this.sugar.addSugar(coffee));
     }
   }
+
+  //Milk
+  const cheapMilkMaker = new CheapMilkSteamer();
+  const fancyMilkMaker = new FancyMilkSteamer();
+  const coldMilkMaker = new ColdMilkSteamer();
+  //Sugar
+  const candySugar = new CandySugarMixer();
+  const sugar = new SugarMixer();
+
+  //Machines
+  const sweetCandyMachine = new SweetCoffeeMaker(12, candySugar);
+  const sweetMachine = new SweetCoffeeMaker(12, sugar);
+
+  const latteMachine = new CaffeLatteMachine(12, "SS", cheapMilkMaker);
+  const coldLatteMachine = new CaffeLatteMachine(12, "SS", coldMilkMaker);
+  const sweetLatteMachine = new SweetCaffeLatteMahcine(
+    12,
+    candySugar,
+    cheapMilkMaker
+  );
 }
