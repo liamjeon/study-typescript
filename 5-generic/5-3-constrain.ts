@@ -16,16 +16,27 @@
     }
     workPartTime() {}
   }
-  
-  function pay(employee:Employee) : Employee{
-      employee.pay();
-      return employee;
+
+  function pay<T extends Employee>(employee: T): T {
+    employee.pay();
+    return employee;
   }
 
   const liam = new FullTimeEmployee();
   const bob = new PartTimeEmployee();
   liam.workFullTime();
-  bob.();
+  bob.workPartTime();
+
   const liamAfterPay = pay(liam);
   const bobAfterPay = pay(bob);
+
+  //K extends keyof T : T obj안에 있는 key의 타입
+  function getValue<T, K extends keyof T>(obj: T, key: K): T[K] {
+    return obj[key];
+  }
+  const obj = {
+      name: 'liam',
+      age: 20,
+  }
+  console.log(getValue(obj, 'age'));
 }
